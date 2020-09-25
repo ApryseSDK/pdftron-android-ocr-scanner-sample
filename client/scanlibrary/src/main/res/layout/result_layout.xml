@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:id="@+id/topBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_vertical"
+        android:layout_marginTop="16dp">
+
+        <Button
+            android:id="@+id/original"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@android:color/transparent"
+            android:drawableTop="@drawable/ic_baseline_image_24"
+            android:drawablePadding="8dp"
+            android:text="Original"
+            android:textColor="@android:color/white" />
+
+        <Button
+            android:id="@+id/magicColor"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@android:color/transparent"
+            android:drawableTop="@drawable/ic_baseline_color_lens_24"
+            android:drawablePadding="8dp"
+            android:singleLine="true"
+            android:text="Magic Color"
+            android:textColor="@android:color/white" />
+
+        <Button
+            android:id="@+id/grayMode"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@android:color/transparent"
+            android:drawableTop="@drawable/ic_baseline_cloud_24"
+            android:drawablePadding="8dp"
+            android:singleLine="true"
+            android:text="Grayscale"
+            android:textColor="@android:color/white" />
+
+        <Button
+            android:id="@+id/BWMode"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:background="@android:color/transparent"
+            android:drawableTop="@drawable/ic_baseline_invert_colors_24"
+            android:drawablePadding="8dp"
+            android:singleLine="true"
+            android:text="B &amp; W"
+            android:textColor="@android:color/white" />
+    </LinearLayout>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/doneButton"
+        style="@style/Widget.MaterialComponents.Button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_margin="12dp"
+        android:background="@color/bottom_background_color"
+        android:orientation="horizontal"
+        android:text="@string/done"
+        android:textSize="16sp" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/doneButton"
+        android:layout_below="@id/topBar"
+        android:layout_gravity="center"
+        android:layout_margin="@dimen/scanPadding">
+
+        <ImageView
+            android:id="@+id/scannedImage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_margin="@dimen/scanPadding" />
+    </FrameLayout>
+
+
+</RelativeLayout>
