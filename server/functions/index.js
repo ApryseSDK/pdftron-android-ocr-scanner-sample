@@ -16,6 +16,7 @@ const functions = require('firebase-functions');
 
 const serviceAccount = require("./serviceAccountKey.json");
 
+// MODIFY THE FOLLOWING SECTION TO MATCH YOUR OWN PROJECT
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   databaseURL: "https://pdftron-mobile-ocr.firebaseio.com",
