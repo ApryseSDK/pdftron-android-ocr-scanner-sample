@@ -67,6 +67,7 @@ class MainActivity : AppCompatActivity() {
 
         button = findViewById(R.id.button)
         progressBar = findViewById(R.id.loading)
+        progressText = findViewById(R.id.progress_text)
         button.setOnClickListener {
 //            when {
 //                hasScannerPermissions() -> {
