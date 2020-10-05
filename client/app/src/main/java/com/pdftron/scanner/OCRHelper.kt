@@ -18,14 +18,15 @@ import java.io.IOException
 import java.util.concurrent.TimeUnit
 
 interface OCRListener {
-    fun onOCRResult(file: File);
+    fun onOCRResult(file: File)
 }
 
-class OCRHelper(activity: FragmentActivity, storage: FirebaseStorage) {
+class OCRHelper(activity: FragmentActivity, storage: FirebaseStorage, cloudFunctionUrl: String) {
 
-    private val mActivity: FragmentActivity = activity;
-    private val mStorage: FirebaseStorage = storage;
-    private val mListeners: MutableList<OCRListener> = ArrayList();
+    private val mActivity: FragmentActivity = activity
+    private val mStorage: FirebaseStorage = storage
+    private val mListeners: MutableList<OCRListener> = ArrayList()
+    private val mCloudFunctionUrl: String = cloudFunctionUrl
 
     private var client: OkHttpClient = OkHttpClient.Builder()
         .connectTimeout(60, TimeUnit.SECONDS)
@@ -60,7 +61,7 @@ class OCRHelper(activity: FragmentActivity, storage: FirebaseStorage) {
     private fun processFile(fileName: String) {
         val processFile = Single.create<String> {
             try {
-                val httpBuilder = "https://us-central1-pdftron-mobile-ocr.cloudfunctions.net/app/ocr"
+                val httpBuilder = mCloudFunctionUrl
                     .toHttpUrlOrNull()!!
                     .newBuilder()
                 httpBuilder.addQueryParameter("file", fileName)

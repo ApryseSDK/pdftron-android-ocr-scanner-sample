@@ -31,7 +31,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var mScannerHelper: ScannerHelper
     private lateinit var mOCRHelper: OCRHelper
 
-    private val bucket = "gs://pdftron-mobile-ocr.appspot.com"
+    private val bucket = "FIREBASE_STORAGE_BUCKET"
+    private val cloudFunctionUrl = "CLOUD_FUNCTION_URL"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,7 +53,7 @@ class MainActivity : AppCompatActivity() {
         })
 
         FirebaseApp.initializeApp(this)
-        mOCRHelper = OCRHelper(this, FirebaseStorage.getInstance(bucket))
+        mOCRHelper = OCRHelper(this, FirebaseStorage.getInstance(bucket), cloudFunctionUrl)
         mOCRHelper.addOCRListener(object : OCRListener {
             override fun onOCRResult(file: File) {
                 // Hide progress bar and open processed document in PDF viewer
@@ -74,7 +75,7 @@ class MainActivity : AppCompatActivity() {
 //                    // You can directly ask for the permission.
 //                    // The registered ActivityResultCallback gets the result of this request.
 
-            mScannerHelper.launch();
+            mScannerHelper.launch()
 //                }
 //            }
         }
