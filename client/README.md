@@ -1,0 +1,1 @@
+# Scanner OCR Android App
