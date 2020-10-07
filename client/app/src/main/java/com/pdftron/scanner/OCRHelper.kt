@@ -61,6 +61,7 @@ class OCRHelper(activity: FragmentActivity, storage: FirebaseStorage, cloudFunct
     private fun processFile(fileName: String) {
         val processFile = Single.create<String> {
             try {
+                // Create HTTP request to trigger cloud function
                 val httpBuilder = mCloudFunctionUrl
                     .toHttpUrlOrNull()!!
                     .newBuilder()
@@ -83,8 +84,11 @@ class OCRHelper(activity: FragmentActivity, storage: FirebaseStorage, cloudFunct
             .observeOn(AndroidSchedulers.mainThread())
             .subscribe(Consumer {
                 Log.d("ScannerSample", "Result is = $it")
+                // Download processed file from Firebase Storage
                 val trimmedResult = it.replace("\"", "")
                 downloadFile(trimmedResult)
+                // Delete uploaded file from Firebase Storage
+                deleteFile(fileName)
             }, Consumer {
                 Log.d("ScannerSample", "Error = $it")
             })
@@ -101,10 +105,18 @@ class OCRHelper(activity: FragmentActivity, storage: FirebaseStorage, cloudFunct
             mListeners.forEach{
                 it.onOCRResult(localFile)
             }
+            // Delete processed file on Firebase Storage
+            deleteFile(fileName)
 
         }.addOnFailureListener {
             // Handle any errors
             Log.d("ScannerSample", "File not downloaded: $it")
         }
+    }
+
+    private fun deleteFile(fileName: String) {
+        val reference = mStorage.reference
+        val fileReference = reference.child(fileName)
+        fileReference.delete()
     }
 }
