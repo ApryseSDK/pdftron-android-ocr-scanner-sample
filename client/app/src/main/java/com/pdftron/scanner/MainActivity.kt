@@ -4,7 +4,6 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
-import android.util.Log
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -25,7 +24,6 @@ import okhttp3.Request
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
-import java.io.OutputStream
 import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity() {
@@ -34,8 +32,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var progressBar: ProgressBar
     private lateinit var progressText: TextView
 
-    private val bucket =  "FIREBASE_STORAGE_BUCKET"
-    private val cloudFunctionUrl: String =  "CLOUD_FUNCTION_URL"
+    private val bucket = "FIREBASE_STORAGE_BUCKET"
+    private val cloudFunctionUrl: String = "CLOUD_FUNCTION_URL"
 
     private val storage: FirebaseStorage = FirebaseStorage.getInstance(bucket)
     private var client: OkHttpClient = OkHttpClient.Builder()
@@ -54,24 +52,19 @@ class MainActivity : AppCompatActivity() {
         // Add callback to handle returned image from scanner
         val scannerLauncher = registerForActivityResult(ScannerContract()) { uri ->
             if (uri != null) {
-                try {
-                    // Obtain the bitmap and save as a local image file
-                    var bitmap: Bitmap? = null
-                    bitmap = MediaStore.Images.Media.getBitmap(contentResolver, uri)
-                    contentResolver.delete(uri!!, null, null)
+                // Obtain the bitmap and save as a local image file
+                var bitmap: Bitmap? = null
+                bitmap = MediaStore.Images.Media.getBitmap(contentResolver, uri)
+                contentResolver.delete(uri!!, null, null)
 
-                    // Save bitmap to local cache as image then upload for processing
-                    val localJpeg = saveBitmapAsJpeg(bitmap)
+                // Save bitmap to local cache as image then upload for processing
+                val localJpeg = saveBitmapAsJpeg(bitmap)
 
-                    // Process image on server
-                    uploadFile(localJpeg)
+                // Process image on server
+                uploadFile(localJpeg)
 
-                    // Show progress UI
-                    showProgress()
-
-                } catch (e: IOException) {
-                    e.printStackTrace()
-                }
+                // Show progress UI
+                showProgress()
             }
         }
 
@@ -91,12 +84,8 @@ class MainActivity : AppCompatActivity() {
         val fileReference = reference.child(fileName)
         val uploadTask = fileReference.putFile(Uri.fromFile(localFile))
         // Register observers to listen for when the download is done or if it fails
-        uploadTask.addOnSuccessListener { taskSnapshot ->
-            Log.d("ScannerSample", "File uploaded")
+        uploadTask.addOnSuccessListener {
             OCRCloudFunction(fileName)
-        }.addOnFailureListener {
-            // Handle unsuccessful uploads
-            Log.d("ScannerSample", "File not uploaded")
         }
     }
 
@@ -125,16 +114,13 @@ class MainActivity : AppCompatActivity() {
         }.apply {
             subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({
-                    Log.d("ScannerSample", "Result is = $it")
+                .subscribe { it ->
                     // Download processed file from Firebase Storage
                     val trimmedResult = it.replace("\"", "")
                     downloadStorageFile(trimmedResult)
                     // Optionally, delete uploaded file from Firebase Storage
                     deleteStorageFile(fileName)
-                }, {
-                    Log.d("ScannerSample", "Error = $it")
-                })
+                }
         }
     }
 
@@ -144,9 +130,6 @@ class MainActivity : AppCompatActivity() {
         val localFile = File(cacheDir, fileName)
 
         fileReference.getFile(localFile).addOnSuccessListener {
-            // Local temp file has been created
-            Log.d("ScannerSample", "File downloaded")
-
             // Hide progress bar
             hideProgress()
 
@@ -158,10 +141,6 @@ class MainActivity : AppCompatActivity() {
 
             // Delete processed file on Firebase Storage
             deleteStorageFile(fileName)
-
-        }.addOnFailureListener {
-            // Handle any errors
-            Log.d("ScannerSample", "File not downloaded: $it")
         }
     }
 
@@ -187,15 +166,10 @@ class MainActivity : AppCompatActivity() {
         val filesDir: File = filesDir
         val imageFile = File(filesDir, File.createTempFile("image", ".jpg").name)
 
-        val os: OutputStream
-        try {
-            os = FileOutputStream(imageFile)
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, os)
-            os.flush()
-            os.close()
-        } catch (e: Exception) {
-            // ignore
-        }
+        val os = FileOutputStream(imageFile)
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, os)
+        os.flush()
+        os.close()
 
         return imageFile
     }
