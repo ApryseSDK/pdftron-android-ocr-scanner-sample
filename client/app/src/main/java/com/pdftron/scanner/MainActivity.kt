@@ -36,12 +36,6 @@ class MainActivity : AppCompatActivity() {
     private val cloudFunctionUrl: String = "CLOUD_FUNCTION_URL"
 
     private val storage: FirebaseStorage = FirebaseStorage.getInstance(bucket)
-    private var client: OkHttpClient = OkHttpClient.Builder()
-        .connectTimeout(60, TimeUnit.SECONDS)
-        .callTimeout(60, TimeUnit.SECONDS)
-        .readTimeout(60, TimeUnit.SECONDS)
-        .writeTimeout(60, TimeUnit.SECONDS)
-        .build()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -58,7 +52,7 @@ class MainActivity : AppCompatActivity() {
                 contentResolver.delete(uri!!, null, null)
 
                 // Save bitmap to local cache as image then upload for processing
-                val localJpeg = saveBitmapAsJpeg(bitmap)
+                val localJpeg = saveBitmapAsJpeg(bitmap, filesDir)
 
                 // Process image on server
                 uploadFile(localJpeg)
@@ -85,39 +79,32 @@ class MainActivity : AppCompatActivity() {
         val uploadTask = fileReference.putFile(Uri.fromFile(localFile))
         // Register observers to listen for when the download is done or if it fails
         uploadTask.addOnSuccessListener {
-            OCRCloudFunction(fileName)
+            // If successful, we run our cloud function with the given file
+            runCloudFunction(fileName)
         }
     }
 
-    private fun OCRCloudFunction(fileName: String) {
+    private fun runCloudFunction(fileName: String) {
         // Call cloud function using HTTP request using OkHttp and RxJava
         Single.create<String> {
-            try {
-                // Create HTTP request to trigger cloud function
-                val httpBuilder = cloudFunctionUrl
-                    .toHttpUrlOrNull()!!
-                    .newBuilder()
-                httpBuilder.addQueryParameter("file", fileName)
-                val request: Request = Request.Builder()
-                    .url(httpBuilder.build())
-                    .build()
-                val response = client.newCall(request).execute()
-                val body = response.body
-                if (response.isSuccessful) {
-                    it.onSuccess(body!!.string())
-                } else {
-                    throw IOException("Unsuccessful")
-                }
-            } catch (e: IOException) {
-                it.onError(e)
+            // Create HTTP request to trigger cloud function
+            val httpBuilder = cloudFunctionUrl.toHttpUrlOrNull()!!.newBuilder()
+                .addQueryParameter("file", fileName)
+            val request = Request.Builder().url(httpBuilder.build()).build()
+            val client = OkHttpClient.Builder().callTimeout(60, TimeUnit.SECONDS).build()
+            val response = client.newCall(request).execute()
+            if (response.isSuccessful) {
+                it.onSuccess(response.body!!.string())
+            } else {
+                it.onError(IOException("Unsuccessful"))
             }
         }.apply {
             subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe { it ->
-                    // Download processed file from Firebase Storage
-                    val trimmedResult = it.replace("\"", "")
-                    downloadStorageFile(trimmedResult)
+                    // If processing is successful, download processed file from Firebase Storage
+                    downloadStorageFile(it.replace("\"", "")) // trim result
+
                     // Optionally, delete uploaded file from Firebase Storage
                     deleteStorageFile(fileName)
                 }
@@ -134,12 +121,10 @@ class MainActivity : AppCompatActivity() {
             hideProgress()
 
             // Open processed document in PDF viewer
-            val config = ViewerConfig.Builder()
-                .openUrlCachePath(cacheDir.absolutePath)
-                .build()
+            val config = ViewerConfig.Builder().openUrlCachePath(cacheDir.absolutePath).build()
             DocumentActivity.openDocument(this@MainActivity, Uri.fromFile(localFile), config)
 
-            // Delete processed file on Firebase Storage
+            // Optionally, delete processed file on Firebase Storage
             deleteStorageFile(fileName)
         }
     }
@@ -162,9 +147,8 @@ class MainActivity : AppCompatActivity() {
         button.visibility = View.VISIBLE
     }
 
-    private fun saveBitmapAsJpeg(bitmap: Bitmap): File {
-        val filesDir: File = filesDir
-        val imageFile = File(filesDir, File.createTempFile("image", ".jpg").name)
+    private fun saveBitmapAsJpeg(bitmap: Bitmap, folder: File): File {
+        val imageFile = File(folder, File.createTempFile("image", ".jpg").name)
 
         val os = FileOutputStream(imageFile)
         bitmap.compress(Bitmap.CompressFormat.JPEG, 100, os)
