@@ -62,7 +62,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-
         button = findViewById(R.id.button)
         progressBar = findViewById(R.id.loading)
         progressText = findViewById(R.id.progress_text)
@@ -91,12 +90,13 @@ class MainActivity : AppCompatActivity() {
             val httpBuilder = cloudFunctionUrl.toHttpUrlOrNull()!!.newBuilder()
                 .addQueryParameter("file", fileName)
             val request = Request.Builder().url(httpBuilder.build()).build()
-            val client = OkHttpClient.Builder().callTimeout(60, TimeUnit.SECONDS).build()
+            val client = OkHttpClient.Builder().readTimeout(60, TimeUnit.SECONDS)
+                .writeTimeout(60, TimeUnit.SECONDS).callTimeout(60, TimeUnit.SECONDS).build()
             val response = client.newCall(request).execute()
             if (response.isSuccessful) {
                 it.onSuccess(response.body!!.string())
             } else {
-                it.onError(IOException("Unsuccessful"))
+                it.onError(IOException(response.message))
             }
         }.apply {
             subscribeOn(Schedulers.io())
