@@ -1,5 +1,6 @@
 package com.pdftron.scanner
 
+import android.Manifest
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
@@ -7,6 +8,8 @@ import android.provider.MediaStore
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.button.MaterialButton
 import com.google.firebase.FirebaseApp
@@ -37,6 +40,17 @@ class MainActivity : AppCompatActivity() {
     private val cloudFunctionUrl: String = "CLOUD_FUNCTION_URL"
 
     private val storage: FirebaseStorage = FirebaseStorage.getInstance(bucket)
+
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        for (hasPermission in permissions.values) {
+            if (!hasPermission) {
+                Toast.makeText(this, "Missing Required Permissions", Toast.LENGTH_LONG).show()
+                finish()
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -70,6 +84,17 @@ class MainActivity : AppCompatActivity() {
             // Launch the scanner activity
             scannerLauncher.launch(ScanConstants.OPEN_CAMERA)
         }
+
+        // Check for permission before proceeding
+        requestPermissionLauncher.launch(
+            arrayOf(
+                Manifest.permission.READ_EXTERNAL_STORAGE,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                Manifest.permission.CAMERA,
+                Manifest.permission.RECORD_AUDIO,
+                Manifest.permission.INTERNET
+            )
+        )
     }
 
     private fun uploadFile(localFile: File) {
