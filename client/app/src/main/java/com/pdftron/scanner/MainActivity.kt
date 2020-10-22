@@ -15,6 +15,7 @@ import com.pdftron.pdf.config.ViewerConfig
 import com.pdftron.pdf.controls.DocumentActivity
 import com.scanlibrary.ScanConstants
 import com.scanlibrary.ScannerContract
+import com.scanlibrary.Utils
 import io.reactivex.Single
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
@@ -52,7 +53,7 @@ class MainActivity : AppCompatActivity() {
                 contentResolver.delete(uri!!, null, null)
 
                 // Save bitmap to local cache as image then upload for processing
-                val localJpeg = saveBitmapAsJpeg(bitmap, filesDir)
+                val localJpeg = Utils.saveBitmapAsJpeg(bitmap, filesDir)
 
                 // Process image on server
                 uploadFile(localJpeg)
