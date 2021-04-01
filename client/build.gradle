@@ -19,7 +19,7 @@ allprojects {
     repositories {
         google()
         maven {
-            url "https://pdftron-maven.s3.amazonaws.com/release"
+            url "https://pdftron-maven.s3.amazonaws.com/snapshot"
         }
         jcenter()
         maven { url "https://oss.jfrog.org/libs-snapshot" }
