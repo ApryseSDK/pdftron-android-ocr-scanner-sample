@@ -23,6 +23,9 @@ allprojects {
         }
         jcenter()
         maven { url "https://oss.jfrog.org/libs-snapshot" }
+        flatDir {
+            dirs 'libs'
+        }
     }
 }
 

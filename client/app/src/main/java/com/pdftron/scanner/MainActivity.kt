@@ -90,9 +90,15 @@ class MainActivity : AppCompatActivity() {
                         val doc = PDFDoc()
                         val outputPath = File(
                             this.filesDir, com.pdftron.pdf.utils.Utils.getFileNameNotInUse(
-                                "scanned_doc.pdf"
+                                "scanned_doc_output.pdf"
                             )
                         )
+                        val inputPath = File(
+                            this.filesDir, com.pdftron.pdf.utils.Utils.getFileNameNotInUse(
+                                "scanned_doc_input.pdf"
+                            )
+                        )
+
                         Convert.toPdf(doc, localJpeg.absolutePath)
 
                         val page = doc.getPage(1)
@@ -134,6 +140,7 @@ class MainActivity : AppCompatActivity() {
                                     val elementFrame = element.boundingBox
 
                                     val pdfRect = androidRectToPdfRect(elementFrame!!, ratioWidth, imgHeight)
+                                    pdfRect.normalize()
 
 //                                    val sq3 = Square.create(doc, pdfRect)
 //                                    sq3.setColor(ColorPt(0.0, 0.0, 0.0), 3)
@@ -141,11 +148,11 @@ class MainActivity : AppCompatActivity() {
 //                                    page.annotPushBack(sq3)
 
                                     val word = JSONObject()
-                                    word.put("font-size", (pdfRect.y2 - pdfRect.y1))
-                                    word.put("length", (pdfRect.x2 - pdfRect.x1))
+                                    word.put("font-size", (pdfRect.y2 - pdfRect.y1).toInt())
+                                    word.put("length", (pdfRect.x2 - pdfRect.x1).toInt())
                                     word.put("text", elementText)
-                                    word.put("x", pdfRect.x1)
-                                    word.put("y", pdfRect.y1)
+                                    word.put("x", pdfRect.x1.toInt())
+                                    word.put("y", pdfRect.y1.toInt())
                                     jsonWords.put(word)
                                 }
                             }
@@ -158,13 +165,14 @@ class MainActivity : AppCompatActivity() {
                         jsonPage.put("Word", jsonWords)
                         jsonPage.put("num", 1) // Only supports one page
                         jsonPage.put("dpi", 96)
-                        jsonPage.put("origin", "BottomLeft'")
+                        jsonPage.put("origin", "BottomLeft")
 
                         jsonPages.put(jsonPage)
                         jsonObj.put("Page", jsonPages)
 
-                        OCRModule.applyOCRJsonToPDF(doc, jsonObj.toString());
 
+                        doc.save(inputPath.absolutePath, SDFDoc.SaveMode.INCREMENTAL, null)
+                        OCRModule.applyOCRJsonToPDF(doc, jsonObj.toString());
                         doc.save(outputPath.absolutePath, SDFDoc.SaveMode.INCREMENTAL, null)
 
                         val config = ViewerConfig.Builder().openUrlCachePath(cacheDir.absolutePath).build()
