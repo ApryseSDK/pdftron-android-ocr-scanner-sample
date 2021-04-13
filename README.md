@@ -1,11 +1,12 @@
 # PDFTron Android OCR Scanner Sample
-This sample showcases the OCR capabilities of the PDFTron SDK. This sample consists of two parts: the server component which makes use of Firebase Cloud functions and Firebase Storage, and the client part which a [fork](https://github.com/brandenfung2/AndroidScannerDemo) of the [AndroidScannerDemo library](https://github.com/brandenfung2/AndroidScannerDemo) to scan documents.
+This sample uses Google's ML Kit Text Recognition APIs to extract text from image documents taken with the camera. The PDFTron API is used to create an output PDF containing the captured image and recognized text.
 
 ![Screenshot](https://pdftron.s3.amazonaws.com/custom/websitefiles/android/pdftron-scanner-ocr-min.gif)
 
 # Setup
-1. [First follow the guide to setup your server](https://github.com/PDFTron/pdftron-android-ocr-scanner-sample/tree/master/server)
-2. [Then follow these steps to run the client app using Android Studio](https://github.com/PDFTron/pdftron-android-ocr-scanner-sample/tree/master/client)
+1. Clone this repository.
+2. Open a new project in Android and select the folder containing this repository.
+3. Run the app in Android Studio.
 
 ## Contributing
 See [Contributing](./CONTRIBUTING.md)
