@@ -171,9 +171,10 @@ class MainActivity : AppCompatActivity() {
                         jsonObj.put("Page", jsonPages)
 
 
-                        doc.save(inputPath.absolutePath, SDFDoc.SaveMode.INCREMENTAL, null)
+                        doc.save(inputPath.absolutePath, SDFDoc.SaveMode.LINEARIZED, null)
                         OCRModule.applyOCRJsonToPDF(doc, jsonObj.toString());
-                        doc.save(outputPath.absolutePath, SDFDoc.SaveMode.INCREMENTAL, null)
+                        Log.d("OCR_STRING=", jsonObj.toString());
+                        doc.save(outputPath.absolutePath, SDFDoc.SaveMode.LINEARIZED, null)
 
                         val config = ViewerConfig.Builder().openUrlCachePath(cacheDir.absolutePath).build()
                         DocumentActivity.openDocument(
