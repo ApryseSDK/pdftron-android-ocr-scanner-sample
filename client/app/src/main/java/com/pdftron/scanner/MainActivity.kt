@@ -151,6 +151,7 @@ class MainActivity : AppCompatActivity() {
                                     word.put("font-size", (pdfRect.y2 - pdfRect.y1).toInt())
                                     word.put("length", (pdfRect.x2 - pdfRect.x1).toInt())
                                     word.put("text", elementText)
+                                    word.put("orientation", "U")
                                     word.put("x", pdfRect.x1.toInt())
                                     word.put("y", pdfRect.y1.toInt())
                                     jsonWords.put(word)
