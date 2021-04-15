@@ -13,6 +13,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.button.MaterialButton
 import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.Text
 import com.google.mlkit.vision.text.TextRecognition
 import com.pdftron.pdf.*
 import com.pdftron.pdf.config.ViewerConfig
@@ -75,74 +76,9 @@ class MainActivity : AppCompatActivity() {
                 val image = InputImage.fromFilePath(this, Uri.fromFile(localJpeg))
 
                 showProgress()
-                val result = TextRecognition.getClient().process(image)
-                    .addOnSuccessListener { visionText ->
-                        val doc = PDFDoc()
-                        val outputPath = File(
-                            this.filesDir, com.pdftron.pdf.utils.Utils.getFileNameNotInUse(
-                                "scanned_doc_output.pdf"
-                            )
-                        )
 
-                        Convert.toPdf(doc, localJpeg.absolutePath)
-
-                        val page = doc.getPage(1) // currently this sample only supports 1 page
-
-                        val ratioWidth = page.pageWidth / imgWidth;
-
-                        val jsonWords = JSONArray()
-
-                        for (block in visionText.textBlocks) {
-                            for (line in block.lines) {
-                                val lineFrame = line.boundingBox
-
-                                for (element in line.elements) {
-                                    val elementText = element.text
-                                    val elementFrame = element.boundingBox
-
-                                    val pdfRect =
-                                        androidRectToPdfRect(elementFrame!!, ratioWidth, imgHeight)
-                                    pdfRect.normalize()
-
-                                    val word = JSONObject()
-                                    word.put("font-size", (pdfRect.y2 - pdfRect.y1).toInt())
-                                    word.put("length", (pdfRect.x2 - pdfRect.x1).toInt())
-                                    word.put("text", elementText)
-                                    word.put("orientation", "U")
-                                    word.put("x", pdfRect.x1.toInt())
-                                    word.put("y", pdfRect.y1.toInt())
-                                    jsonWords.put(word)
-                                }
-                            }
-                        }
-
-                        val jsonObj = JSONObject()
-                        val jsonPages = JSONArray()
-
-                        val jsonPage = JSONObject()
-                        jsonPage.put("Word", jsonWords)
-                        jsonPage.put("num", 1) // Only supports one page
-                        jsonPage.put("dpi", 96)
-                        jsonPage.put("origin", "BottomLeft")
-
-                        jsonPages.put(jsonPage)
-                        jsonObj.put("Page", jsonPages)
-
-                        OCRModule.applyOCRJsonToPDF(doc, jsonObj.toString());
-                        doc.save(outputPath.absolutePath, SDFDoc.SaveMode.LINEARIZED, null)
-
-                        val config =
-                            ViewerConfig.Builder().openUrlCachePath(cacheDir.absolutePath).build()
-                        DocumentActivity.openDocument(
-                            this@MainActivity,
-                            Uri.fromFile(outputPath),
-                            config
-                        )
-                    }
-                    .addOnFailureListener { e ->
-                        hideProgress()
-                        Toast.makeText(this, "Could not recognize text", Toast.LENGTH_SHORT).show()
-                    }
+                // Process image using ML Kit
+                processOCR(imgWidth, imgHeight, image, localJpeg)
             }
         }
 
@@ -164,6 +100,96 @@ class MainActivity : AppCompatActivity() {
                 Manifest.permission.INTERNET
             )
         )
+    }
+
+    private fun processOCR(
+        imgWidth: Double,
+        imgHeight: Double,
+        image: InputImage,
+        localJpeg: File
+    ) {
+        val result = TextRecognition.getClient().process(image)
+            .addOnSuccessListener { visionText ->
+
+                // Create the PDF containing the recognized text
+                val outputPath = createPDF(imgWidth, imgHeight, localJpeg, visionText)
+
+                // Open the document in the viewer
+                val config =
+                    ViewerConfig.Builder().openUrlCachePath(cacheDir.absolutePath).build()
+                DocumentActivity.openDocument(
+                    this@MainActivity,
+                    Uri.fromFile(outputPath),
+                    config
+                )
+            }
+            .addOnFailureListener { e ->
+                hideProgress()
+                Toast.makeText(this, "Could not recognize text", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    private fun createPDF(
+        imgWidth: Double,
+        imgHeight: Double,
+        localJpeg: File,
+        visionText: com.google.mlkit.vision.text.Text
+    ): File {
+
+        val doc = PDFDoc()
+        val outputFile = File(
+            this.filesDir, com.pdftron.pdf.utils.Utils.getFileNameNotInUse(
+                "scanned_doc_output.pdf"
+            )
+        )
+
+        // First convert the image to a PDF Doc
+        Convert.toPdf(doc, localJpeg.absolutePath)
+
+        val page = doc.getPage(1) // currently this sample only supports 1 page
+        val ratio = page.pageWidth / imgWidth;
+
+        // We will need to generate a JSON containing the text data, which will be used
+        // to insert the text information into the PDF document
+        val jsonWords = JSONArray()
+        for (block in visionText.textBlocks) {
+            for (line in block.lines) {
+                for (element in line.elements) {
+                    val elementText = element.text
+                    val elementFrame = element.boundingBox
+
+                    val pdfRect =
+                        androidRectToPdfRect(elementFrame!!, ratio, imgHeight)
+                    pdfRect.normalize()
+
+                    val word = JSONObject()
+                    word.put("font-size", (pdfRect.y2 - pdfRect.y1).toInt())
+                    word.put("length", (pdfRect.x2 - pdfRect.x1).toInt())
+                    word.put("text", elementText)
+                    word.put("orientation", "U")
+                    word.put("x", pdfRect.x1.toInt())
+                    word.put("y", pdfRect.y1.toInt())
+                    jsonWords.put(word)
+                }
+            }
+        }
+
+        val jsonObj = JSONObject()
+        val jsonPages = JSONArray()
+
+        val jsonPage = JSONObject()
+        jsonPage.put("Word", jsonWords)
+        jsonPage.put("num", 1) // Only supports one page
+        jsonPage.put("dpi", 96)
+        jsonPage.put("origin", "BottomLeft")
+
+        jsonPages.put(jsonPage)
+        jsonObj.put("Page", jsonPages)
+
+        // Insert the text into the document
+        OCRModule.applyOCRJsonToPDF(doc, jsonObj.toString());
+        doc.save(outputFile.absolutePath, SDFDoc.SaveMode.LINEARIZED, null)
+        return outputFile
     }
 
     private fun showProgress() {
